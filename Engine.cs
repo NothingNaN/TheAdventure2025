@@ -20,6 +20,7 @@ public class Engine
 
     private Level _currentLevel = new();
     private PlayerObject? _player;
+    private BananaBoss? _bananaBoss;
 
     private DateTimeOffset _lastUpdate = DateTimeOffset.Now;
     private DateTimeOffset _lastMegaFart = DateTimeOffset.MinValue;
@@ -32,8 +33,36 @@ public class Engine
         _audioManager = audioManager;
 
         _input.OnMouseClick += (_, coords) => AddBomb(coords.x, coords.y);
-        _input.OnFartPressed += (_, _) => _audioManager.PlayRandomFart();
+        _input.OnFartPressed += (_, _) => HandleFartPress();
         _input.OnMegaFartPressed += (_, _) => HandleMegaFartPress();
+    }
+
+    private void HandleFartPress()
+    {
+        _audioManager.PlayRandomFart();
+
+        Task.Delay(500).ContinueWith(_ =>
+        {
+            // Apply fart damage to banana boss after 0.5 second delay
+            if (_bananaBoss != null && !_bananaBoss.IsDead && _player != null)
+            {
+                var playerX = _player.Position.X;
+                var playerY = _player.Position.Y;
+
+                if (_bananaBoss != null && !_bananaBoss.IsDead)
+                {
+                    var damageDealt = _bananaBoss.TakeDamage(25, playerX, playerY);
+                    if (damageDealt)
+                    {
+                        Console.WriteLine($"Boss took fart damage! HP: {_bananaBoss.HitPoints}/{_bananaBoss.MaxHitPoints}");
+                        if (_bananaBoss.IsDead)
+                        {
+                            Console.WriteLine("BANANA BOSS DEFEATED! Watch out for the peel!");
+                        }
+                    }
+                }
+            }
+        });
     }
 
     private void HandleMegaFartPress()
@@ -44,6 +73,29 @@ public class Engine
             _audioManager.PlayMegaFart();
             _lastMegaFart = DateTimeOffset.Now;
             Console.WriteLine("MEGA FART!");
+
+            Task.Delay(1000).ContinueWith(_ =>
+            {
+                // Apply mega fart damage to banana boss after 1 second delay
+                if (_bananaBoss != null && !_bananaBoss.IsDead && _player != null)
+                {
+                    var playerX = _player.Position.X;
+                    var playerY = _player.Position.Y;
+
+                    if (_bananaBoss != null && !_bananaBoss.IsDead)
+                    {
+                        var damageDealt = _bananaBoss.TakeDamage(75, playerX, playerY);
+                        if (damageDealt)
+                        {
+                            Console.WriteLine($"Boss took MEGA fart damage! HP: {_bananaBoss.HitPoints}/{_bananaBoss.MaxHitPoints}");
+                            if (_bananaBoss.IsDead)
+                            {
+                                Console.WriteLine("BANANA BOSS DEFEATED BY MEGA FART! Watch out for the peel!");
+                            }
+                        }
+                    }
+                }
+            });
         }
         else
         {
@@ -63,6 +115,10 @@ public class Engine
 
         _player = new(SpriteSheet.Load(_renderer, "Player.json", "Assets"), 100, 100);
         _player.OnPlayerDeath += (_, _) => _audioManager.PlayOof();
+
+        // Create banana boss
+        var bossSprite = SpriteSheet.Load(_renderer, "BananaBoss.json", "Assets");
+        _bananaBoss = new BananaBoss(bossSprite, 400, 300, 150); // Position at (400, 300) with 150 HP
 
         var levelContent = File.ReadAllText(Path.Combine("Assets", "terrain.tmj"));
         var level = JsonSerializer.Deserialize<Level>(levelContent);
@@ -131,6 +187,19 @@ public class Engine
             _player.Attack();
         }
 
+        // Update banana boss
+        if (_bananaBoss != null)
+        {
+            _bananaBoss.Update(_player.Position.X, _player.Position.Y);
+
+            // Check if player stepped on dead banana boss (banana peel)
+            if (_bananaBoss.CheckPlayerCollision(_player.Position.X, _player.Position.Y))
+            {
+                Console.WriteLine("Player slipped on banana peel!");
+                _player.GameOver();
+            }
+        }
+
         _scriptEngine.ExecuteAll(this);
 
         if (addBomb)
@@ -149,6 +218,12 @@ public class Engine
 
         RenderTerrain();
         RenderAllObjects();
+
+        // Render banana boss
+        if (_bananaBoss != null)
+        {
+            _bananaBoss.Render(_renderer);
+        }
 
         _renderer.PresentFrame();
     }

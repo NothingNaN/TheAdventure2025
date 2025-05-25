@@ -1,0 +1,64 @@
+{
+    "rowCount": 1,
+    "columnCount": 7,
+    "frameWidth": 128,
+    "frameHeight": 128,
+    "frameCenter": {
+        "offsetX": 64,
+        "offsetY": 64
+    },
+    "fileName": "BananaBoss.png",
+    "animations": {
+        "Idle": {
+            "startFrame": {
+                "row": 0,
+                "col": 0
+            },
+            "endFrame": {
+                "row": 0,
+                "col": 0
+            },
+            "durationMs": 600,
+            "loop": true
+        },
+        "Move": {
+            "startFrame": {
+                "row": 0,
+                "col": 1
+            },
+            "endFrame": {
+                "row": 0,
+                "col": 2
+            },
+            "durationMs": 600,
+            "loop": true,
+            "flip": 1
+        },
+        "TakingDamage": {
+            "startFrame": {
+                "row": 0,
+                "col": 4
+            },
+            "endFrame": {
+                "row": 0,
+                "col": 6
+            },
+            "durationMs": 600,
+            "loop": true,
+            "flip": 1
+        },
+        "Death": {
+            "startFrame": {
+                "row": 0,
+                "col": 3
+            },
+            "endFrame": {
+                "row": 0,
+                "col": 3
+            },
+            "durationMs": 200,
+            "loop": false,
+            "flip": 0
+        }
+    }
+}
