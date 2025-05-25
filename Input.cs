@@ -7,6 +7,11 @@ public unsafe class Input
     private readonly Sdl _sdl;
 
     public EventHandler<(int x, int y)>? OnMouseClick;
+    public EventHandler? OnFartPressed;
+    public EventHandler? OnMegaFartPressed;
+
+    private bool _lastFKeyState = false;
+    private bool _lastGKeyState = false;
 
     public Input(Sdl sdl)
     {
@@ -49,6 +54,18 @@ public unsafe class Input
         return _keyboardState[(int)KeyCode.B] == 1;
     }
 
+    public bool IsKeyFPressed()
+    {
+        ReadOnlySpan<byte> keyboardState = new(_sdl.GetKeyboardState(null), (int)KeyCode.Count);
+        return keyboardState[(int)KeyCode.F] == 1;
+    }
+
+    public bool IsKeyGPressed()
+    {
+        ReadOnlySpan<byte> keyboardState = new(_sdl.GetKeyboardState(null), (int)KeyCode.Count);
+        return keyboardState[(int)KeyCode.G] == 1;
+    }
+
     public bool ProcessInput()
     {
         Event ev = new Event();
@@ -62,110 +79,127 @@ public unsafe class Input
             switch (ev.Type)
             {
                 case (uint)EventType.Windowevent:
-                {
-                    switch (ev.Window.Event)
                     {
-                        case (byte)WindowEventID.Shown:
-                        case (byte)WindowEventID.Exposed:
+                        switch (ev.Window.Event)
                         {
-                            break;
+                            case (byte)WindowEventID.Shown:
+                            case (byte)WindowEventID.Exposed:
+                                {
+                                    break;
+                                }
+                            case (byte)WindowEventID.Hidden:
+                                {
+                                    break;
+                                }
+                            case (byte)WindowEventID.Moved:
+                                {
+                                    break;
+                                }
+                            case (byte)WindowEventID.SizeChanged:
+                                {
+                                    break;
+                                }
+                            case (byte)WindowEventID.Minimized:
+                            case (byte)WindowEventID.Maximized:
+                            case (byte)WindowEventID.Restored:
+                                break;
+                            case (byte)WindowEventID.Enter:
+                                {
+                                    break;
+                                }
+                            case (byte)WindowEventID.Leave:
+                                {
+                                    break;
+                                }
+                            case (byte)WindowEventID.FocusGained:
+                                {
+                                    break;
+                                }
+                            case (byte)WindowEventID.FocusLost:
+                                {
+                                    break;
+                                }
+                            case (byte)WindowEventID.Close:
+                                {
+                                    break;
+                                }
+                            case (byte)WindowEventID.TakeFocus:
+                                {
+                                    _sdl.SetWindowInputFocus(_sdl.GetWindowFromID(ev.Window.WindowID));
+                                    break;
+                                }
                         }
-                        case (byte)WindowEventID.Hidden:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.Moved:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.SizeChanged:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.Minimized:
-                        case (byte)WindowEventID.Maximized:
-                        case (byte)WindowEventID.Restored:
-                            break;
-                        case (byte)WindowEventID.Enter:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.Leave:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.FocusGained:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.FocusLost:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.Close:
-                        {
-                            break;
-                        }
-                        case (byte)WindowEventID.TakeFocus:
-                        {
-                            _sdl.SetWindowInputFocus(_sdl.GetWindowFromID(ev.Window.WindowID));
-                            break;
-                        }
-                    }
 
-                    break;
-                }
+                        break;
+                    }
 
                 case (uint)EventType.Fingermotion:
-                {
-                    break;
-                }
-
-                case (uint)EventType.Mousemotion:
-                {
-                    break;
-                }
-
-                case (uint)EventType.Fingerdown:
-                {
-                    break;
-                }
-                case (uint)EventType.Mousebuttondown:
-                {
-                    if (ev.Button.Button == (byte)MouseButton.Primary)
                     {
-                        OnMouseClick?.Invoke(this, (ev.Button.X, ev.Button.Y));
+                        break;
                     }
 
-                    break;
-                }
+                case (uint)EventType.Mousemotion:
+                    {
+                        break;
+                    }
+
+                case (uint)EventType.Fingerdown:
+                    {
+                        break;
+                    }
+                case (uint)EventType.Mousebuttondown:
+                    {
+                        if (ev.Button.Button == (byte)MouseButton.Primary)
+                        {
+                            OnMouseClick?.Invoke(this, (ev.Button.X, ev.Button.Y));
+                        }
+
+                        break;
+                    }
 
                 case (uint)EventType.Fingerup:
-                {
-                    break;
-                }
+                    {
+                        break;
+                    }
 
                 case (uint)EventType.Mousebuttonup:
-                {
-                    break;
-                }
+                    {
+                        break;
+                    }
 
                 case (uint)EventType.Mousewheel:
-                {
-                    break;
-                }
+                    {
+                        break;
+                    }
 
                 case (uint)EventType.Keyup:
-                {
-                    break;
-                }
+                    {
+                        break;
+                    }
 
                 case (uint)EventType.Keydown:
-                {
-                    break;
-                }
+                    {
+                        break;
+                    }
             }
         }
+
+        // Check for key press events (to avoid holding key spam)
+        bool currentFKeyState = IsKeyFPressed();
+        bool currentGKeyState = IsKeyGPressed();
+
+        if (currentFKeyState && !_lastFKeyState)
+        {
+            OnFartPressed?.Invoke(this, EventArgs.Empty);
+        }
+
+        if (currentGKeyState && !_lastGKeyState)
+        {
+            OnMegaFartPressed?.Invoke(this, EventArgs.Empty);
+        }
+
+        _lastFKeyState = currentFKeyState;
+        _lastGKeyState = currentGKeyState;
 
         return false;
     }

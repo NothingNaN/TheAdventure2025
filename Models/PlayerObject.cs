@@ -25,6 +25,7 @@ public class PlayerObject : RenderableGameObject
     }
 
     public (PlayerState State, PlayerStateDirection Direction) State { get; private set; }
+    public EventHandler? OnPlayerDeath;
 
     public PlayerObject(SpriteSheet spriteSheet, int x, int y) : base(spriteSheet, (x, y))
     {
@@ -68,6 +69,10 @@ public class PlayerObject : RenderableGameObject
 
     public void GameOver()
     {
+        if (State.State != PlayerState.GameOver) // Only trigger death sound once
+        {
+            OnPlayerDeath?.Invoke(this, EventArgs.Empty);
+        }
         SetState(PlayerState.GameOver, PlayerStateDirection.None);
     }
 
@@ -117,7 +122,7 @@ public class PlayerObject : RenderableGameObject
         else
         {
             newState = PlayerState.Move;
-            
+
             if (y < Position.Y && newDirection != PlayerStateDirection.Up)
             {
                 newDirection = PlayerStateDirection.Up;

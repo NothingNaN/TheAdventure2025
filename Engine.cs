@@ -12,6 +12,7 @@ public class Engine
     private readonly GameRenderer _renderer;
     private readonly Input _input;
     private readonly ScriptEngine _scriptEngine = new();
+    private readonly AudioManager _audioManager;
 
     private readonly Dictionary<int, GameObject> _gameObjects = new();
     private readonly Dictionary<string, TileSet> _loadedTileSets = new();
@@ -21,18 +22,47 @@ public class Engine
     private PlayerObject? _player;
 
     private DateTimeOffset _lastUpdate = DateTimeOffset.Now;
+    private DateTimeOffset _lastMegaFart = DateTimeOffset.MinValue;
+    private readonly TimeSpan _megaFartCooldown = TimeSpan.FromSeconds(5); // 5 second cooldown
 
-    public Engine(GameRenderer renderer, Input input)
+    public Engine(GameRenderer renderer, Input input, AudioManager audioManager)
     {
         _renderer = renderer;
         _input = input;
+        _audioManager = audioManager;
 
         _input.OnMouseClick += (_, coords) => AddBomb(coords.x, coords.y);
+        _input.OnFartPressed += (_, _) => _audioManager.PlayRandomFart();
+        _input.OnMegaFartPressed += (_, _) => HandleMegaFartPress();
+    }
+
+    private void HandleMegaFartPress()
+    {
+        var timeSinceLastMegaFart = DateTimeOffset.Now - _lastMegaFart;
+        if (timeSinceLastMegaFart >= _megaFartCooldown)
+        {
+            _audioManager.PlayMegaFart();
+            _lastMegaFart = DateTimeOffset.Now;
+            Console.WriteLine("MEGA FART!");
+        }
+        else
+        {
+            var remainingCooldown = _megaFartCooldown - timeSinceLastMegaFart;
+            Console.WriteLine($"Mega fart on cooldown! {remainingCooldown.TotalSeconds:F1} seconds remaining");
+        }
     }
 
     public void SetupWorld()
     {
+        // Load audio files
+        _audioManager.LoadAudio(Path.Combine("Assets", "fart1.wav"), "fart1");
+        _audioManager.LoadAudio(Path.Combine("Assets", "fart2.wav"), "fart2");
+        _audioManager.LoadAudio(Path.Combine("Assets", "fart3.wav"), "fart3");
+        _audioManager.LoadAudio(Path.Combine("Assets", "megafart.wav"), "megafart");
+        _audioManager.LoadAudio(Path.Combine("Assets", "oof.wav"), "oof");
+
         _player = new(SpriteSheet.Load(_renderer, "Player.json", "Assets"), 100, 100);
+        _player.OnPlayerDeath += (_, _) => _audioManager.PlayOof();
 
         var levelContent = File.ReadAllText(Path.Combine("Assets", "terrain.tmj"));
         var level = JsonSerializer.Deserialize<Level>(levelContent);
@@ -100,7 +130,7 @@ public class Engine
         {
             _player.Attack();
         }
-        
+
         _scriptEngine.ExecuteAll(this);
 
         if (addBomb)
